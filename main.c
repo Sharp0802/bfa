@@ -76,6 +76,15 @@ static size_t beacon(char* dst, const char* name)
     return ofs;
 }
 
+static void tsft(char* dst)
+{
+	struct timeval tv;
+	unsigned long long ts;
+	gettimeofday(&tv, NULL);
+	ts = 1000000ULL * tv.tv_sec + tv.tv_usec;
+	memcpy(dst + 32, &ts, 8);
+}
+
 
 static jmp_buf ehf;
 
@@ -120,8 +129,9 @@ int main(int argc, char* argv[])
     if (setjmp(ehf))
         goto EXIT;
     
-    for (i = 0; pcap_inject(dev, buf + i * BUFSIZ, size[i]) >= 0; i = (i + 1) % (argc - 2))
+    for (i = 0; (tsft(buf + i * BUFSIZ), pcap_inject(dev, buf + i * BUFSIZ, size[i])) >= 0; i = (i + 1) % (argc - 2))
     {
+	    usleep(10000);
     }
     fprintf(stderr, "pcap_inject(): %s\n", pcap_geterr(dev));
 
